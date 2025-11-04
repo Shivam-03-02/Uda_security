@@ -127,7 +127,6 @@ You should fix any of the errors it finds that are High priority. You are welcom
 ### Project Submission
 
 For your submission, please submit the following:
-- Completed project code should be uploaded either to GitHub or a .zip file. Make sure to include the entire project folder.
 
 ### Double-Check the Rubric
 Make sure you have completed all the rubric items [here](https://review.udacity.com/#!/rubrics/3010/view).
@@ -135,5 +134,53 @@ Make sure you have completed all the rubric items [here](https://review.udacity.
 ### Submit your Project
 
 You can submit your project by uploading a zip file or selecting your GitHub repo.
+
+## Quick Build & Verification
+
+Follow these steps to reproduce the build and verification I ran locally (I used Temurin / Eclipse Adoptium JDK 11):
+
+1. Ensure JDK 11 or 17 is installed and `JAVA_HOME` points to it. Example (PowerShell):
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-11.0.28.6-hotspot'
+$env:Path = $env:JAVA_HOME + '\\bin;' + $env:Path
+```
+
+2. Build and run unit tests:
+
+```powershell
+mvn -DskipTests=false clean package
+```
+
+3. Run the executable JAR (from `catpoint-security/target`):
+
+```powershell
+cd catpoint-security\target
+java -jar catpoint-security-1.0-SNAPSHOT.jar
+```
+
+4. Produce a SpotBugs report (two options):
+
+- Recommended (CLI): download SpotBugs and run it against the compiled classes. Example I used (SpotBugs 4.7.3):
+
+```powershell
+# from project root (after building)
+& .\spotbugs\spotbugs-4.7.3\bin\spotbugs.bat -textui -effort:max -high -auxclasspath "catpoint-security\target\catpoint-security-1.0-SNAPSHOT.jar" -html -output "target\site\spotbugs.html" "catpoint-image\target\classes" "catpoint-security\target\classes"
+```
+
+- Or try `mvn site` (the parent POM has the SpotBugs reporting plugin configured). If the plugin fails to resolve in your environment, use the CLI approach above.
+
+5. Evidence included in this repository:
+
+- `catpoint-security/target/catpoint-security-1.0-SNAPSHOT.jar` — shaded executable jar
+- `target/site/spotbugs.html` — SpotBugs report (produced via CLI)
+- `gui_1.png`, `gui_2.png` — GUI screenshots
+- `executable_jar.png` — example screenshot showing `java -jar` (included)
+
+Notes:
+- This project was built and verified under JDK 11. Some static-analysis tools (SpotBugs/ASM) can have issues with newer JDKs; if you see classfile version errors, switch to JDK 11 or 17 before running `mvn site`.
+- I archived the legacy `starter/catpoint-parent` directory to `starter/archive/catpoint-parent-legacy` to avoid duplicate-source noise in IDEs.
+
+If you'd like, I can try to further reduce the remaining shade warnings by excluding more transitive artifacts, or prepare a small script that automates building, running SpotBugs CLI, and packaging the artifact.
 
 
