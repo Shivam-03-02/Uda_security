@@ -1,6 +1,7 @@
 package com.udacity.catpoint.service;
 
 import com.udacity.catpoint.application.StatusListener;
+import com.udacity.catpoint.image.service.ImageService;
 import com.udacity.catpoint.data.AlarmStatus;
 import com.udacity.catpoint.data.ArmingStatus;
 import com.udacity.catpoint.data.SecurityRepository;
@@ -16,12 +17,12 @@ import java.util.Set;
  */
 public class SecurityService {
 
-    private com.udacity.catpoint.service.ImageService imageService;
+    private ImageService imageService;
     private SecurityRepository securityRepository;
     private Set<StatusListener> statusListeners = new HashSet<>();
     private boolean catCurrentlyDetected = false;
 
-    public SecurityService(SecurityRepository securityRepository, com.udacity.catpoint.service.ImageService imageService) {
+    public SecurityService(SecurityRepository securityRepository, ImageService imageService) {
         this.securityRepository = securityRepository;
         this.imageService = imageService;
     }
@@ -37,6 +38,8 @@ public class SecurityService {
                 s.setActive(Boolean.FALSE);
                 securityRepository.updateSensor(s);
             });
+            // notify listeners that sensor statuses changed due to arming
+            statusListeners.forEach(sl -> sl.sensorStatusChanged());
             // if arming to HOME and a cat was recently detected, set ALARM
             if (armingStatus == ArmingStatus.ARMED_HOME && catCurrentlyDetected) {
                 setAlarmStatus(AlarmStatus.ALARM);
@@ -111,6 +114,8 @@ public class SecurityService {
 
         sensor.setActive(active);
         securityRepository.updateSensor(sensor);
+        // notify listeners that a sensor status changed
+        statusListeners.forEach(sl -> sl.sensorStatusChanged());
 
         if (!previousActive && active) {
             handleSensorActivated();

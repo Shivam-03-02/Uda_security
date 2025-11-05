@@ -1,13 +1,16 @@
 package com.udacity.catpoint.service;
 
+import com.udacity.catpoint.application.StatusListener;
 import com.udacity.catpoint.data.*;
+import com.udacity.catpoint.image.service.ImageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,7 +21,7 @@ public class SecurityServiceTest {
     private TestImageService imageService;
 
     private static class TestSecurityRepository implements SecurityRepository {
-        private Set<Sensor> sensors = new TreeSet<>();
+        private Set<Sensor> sensors = new HashSet<>();
         private AlarmStatus alarmStatus = AlarmStatus.NO_ALARM;
         private ArmingStatus armingStatus = ArmingStatus.DISARMED;
 
@@ -73,23 +76,10 @@ public class SecurityServiceTest {
         }
     }
 
-    private Sensor createSensor(String name, SensorType type, boolean active) {
-        Sensor s = new Sensor(name, type);
-        s.setActive(active);
-        return s;
-    }
-
-    @BeforeEach
-    public void setup() {
-        repo = new TestSecurityRepository();
-        imageService = new TestImageService();
-        securityService = new SecurityService(repo, imageService);
-    }
-
-    private static class TestStatusListener implements com.udacity.catpoint.application.StatusListener {
+    private static class TestStatusListener implements StatusListener {
         boolean notified = false;
-        Boolean catDetected = null;
         AlarmStatus lastStatus = null;
+        Boolean catDetected = null;
 
         @Override
         public void notify(AlarmStatus status) {
@@ -104,8 +94,21 @@ public class SecurityServiceTest {
 
         @Override
         public void sensorStatusChanged() {
-            // not used in tests
+            // not needed for tests
         }
+    }
+
+    private Sensor createSensor(String name, SensorType type, boolean active) {
+        Sensor s = new Sensor(name, type);
+        s.setActive(active);
+        return s;
+    }
+
+    @BeforeEach
+    public void setup() {
+        repo = new TestSecurityRepository();
+        imageService = new TestImageService();
+        securityService = new SecurityService(repo, imageService);
     }
 
     @Test
@@ -168,16 +171,17 @@ public class SecurityServiceTest {
         assertEquals(AlarmStatus.ALARM, repo.getAlarmStatus());
     }
 
-    @Test
-    public void sensorDeactivated_whileAlreadyInactive_noChange() {
+    @ParameterizedTest
+    @EnumSource(AlarmStatus.class)
+    public void sensorDeactivated_whileAlreadyInactive_noChange(AlarmStatus initialStatus) {
         repo.setArmingStatus(ArmingStatus.ARMED_AWAY);
         Sensor s = createSensor("Front", SensorType.DOOR, false);
         repo.addSensor(s);
-        repo.setAlarmStatus(AlarmStatus.NO_ALARM);
+        repo.setAlarmStatus(initialStatus);
 
         securityService.changeSensorActivationStatus(s, false);
 
-        assertEquals(AlarmStatus.NO_ALARM, repo.getAlarmStatus());
+        assertEquals(initialStatus, repo.getAlarmStatus());
     }
 
     @Test

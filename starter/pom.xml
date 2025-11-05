@@ -96,6 +96,9 @@
           <version>3.10.1</version>
           <configuration>
             <release>11</release>
+            <!-- Compile on the classpath even when module-info.java files are present
+                 to avoid module-path resolution problems with third-party jars. -->
+            <useModulePath>false</useModulePath>
           </configuration>
         </plugin>
         <plugin>
